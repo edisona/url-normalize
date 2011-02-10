@@ -17,8 +17,10 @@ URI Normalization function:
  * All portions of the URI must be utf-8 encoded NFC from Unicode strings
 
 Inspired by Sam Ruby's urlnorm.py: http://intertwingly.net/blog/2004/08/04/Urlnorm
+This fork author: Nikolay Panov (<pythoneer@niksite.ru>)
 
 History:
+ * 10 Feb 2010: support for shebang (#!) urls
  * 28 Feb 2010: using 'http' schema by default when appropriate
  * 28 Feb 2010: added handling of IDN domains
  * 28 Feb 2010: code pep8-zation
@@ -26,7 +28,7 @@ History:
 """
 
 __license__ = "Python"
-__version__ = 1.0
+__version__ = 1.1
 
 import re
 import unicodedata
@@ -70,6 +72,10 @@ def url_normalize(url, charset='utf-8'):
     if url[0] not in ['/', '-'] and ':' not in url[:7]:
         url = 'http://' + url
 
+    # shebang urls support
+    url = url.replace('#!', '?_escaped_fragment_=')
+
+    # splitting url to useful parts
     scheme, auth, path, query, fragment = urlparse.urlsplit(url.strip())
     (userinfo, host, port) = re.search('([^@]*@)?([^:]*):?(.*)', auth).groups()
 
@@ -81,7 +87,7 @@ def url_normalize(url, charset='utf-8'):
     if host and host[-1] == '.':
         host = host[:-1]
     # take care about IDN domains
-    host = host.decode(charset).encode('idna') # IDN -> ACE
+    host = host.decode(charset).encode('idna')  # IDN -> ACE
 
     # Only perform percent-encoding where it is essential.
     # Always use uppercase A-through-F characters when percent-encoding.
@@ -259,6 +265,8 @@ if __name__ == "__main__":
             '-',
         'пример.испытание/Служебная:Search/Test':
             'http://xn--e1afmkfd.xn--80akhbyknj4f/%D0%A1%D0%BB%D1%83%D0%B6%D0%B5%D0%B1%D0%BD%D0%B0%D1%8F:Search/Test',
+        'http://lifehacker.com/#!5753509/hello-world-this-is-the-new-lifehacker':
+            'http://lifehacker.com/?_escaped_fragment_=5753509/hello-world-this-is-the-new-lifehacker',
     }
 
     def testcase2(original, normalized):
